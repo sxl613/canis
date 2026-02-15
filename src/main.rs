@@ -2,6 +2,8 @@ mod media;
 mod templates;
 use askama::Template;
 use axum::extract::{Path as AxumPath, Query, State};
+use axum::middleware;
+use axum::response::IntoResponse;
 use axum::{Router, http::StatusCode, response::Html, routing::get};
 use serde::Deserialize;
 use std::{net::SocketAddr, path::PathBuf};
@@ -56,6 +58,8 @@ impl Default for SortField {
 #[derive(Clone)]
 struct AppState {
     media_path: PathBuf,
+    auth_cookie_name: Option<String>,
+    auth_cookie_value: Option<String>,
 }
 
 #[tokio::main]
@@ -68,16 +72,24 @@ async fn main() {
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let bind_addr = format!("{}:{}", addr, port);
     let media_path = std::env::var("MEDIA_PATH").unwrap_or_else(|_| "./media".to_string());
+    let auth_cookie_value = std::env::var("AUTH_COOKIE_VALUE").ok();
+    let auth_cookie_name = std::env::var("AUTH_COOKIE_NAME").ok();
 
     // Create application state
     let state = AppState {
         media_path: PathBuf::from(&media_path),
+        auth_cookie_value: auth_cookie_value,
+        auth_cookie_name: auth_cookie_name,
     };
 
     // Build our application with routes
     let app = Router::new()
         .route("/", get(index_handler))
         .route("/v/{filename}", get(watch_handler))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware,
+        ))
         // Serve static files from media directory
         .nest_service("/media", ServeDir::new(media_path))
         .with_state(state);
@@ -118,18 +130,29 @@ async fn watch_handler(
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
 }
 
-// async fn play_video(Path(filename): Path<String>, State(state): State<AppState>) -> Response {
-//     // Construct full path securely
-//     let file_path = state.media_dir.join(&filename);
-
-//     // Security check: Ensure the file is inside the media_dir (prevents ../ attacks)
-//     if !file_path.starts_with(&state.media_dir) {
-//         return StatusCode::FORBIDDEN.into_response();
-//     }
-
-//     // Serve the file with automatic mime guessing and Range support (seeking)
-//     match ServeFile::new(file_path).try_into_response() {
-//         Ok(res) => res.into_response(),
-//         Err(err) => StatusCode::NOT_FOUND.into_response(),
-//     }
-// }
+async fn auth_middleware(
+    State(state): State<AppState>,
+    request: axum::http::Request<axum::body::Body>,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    match (&state.auth_cookie_name, &state.auth_cookie_value) {
+        (Some(name), Some(pwd)) if !name.trim().is_empty() && !pwd.trim().is_empty() => {
+            if let Some(cookie_header) = request.headers().get("cookie") {
+                if let Ok(cookie_str) = cookie_header.to_str() {
+                    for cookie in cookie_str.split(";") {
+                        let cookie = cookie.trim();
+                        if let Some((key, value)) = cookie.split_once("=") {
+                            if key == name && value == pwd {
+                                return next.run(request).await;
+                            }
+                        }
+                    }
+                }
+            }
+            return StatusCode::UNAUTHORIZED.into_response();
+        }
+        _ => {
+            return next.run(request).await;
+        }
+    }
+}
