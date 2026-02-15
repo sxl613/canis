@@ -1,16 +1,22 @@
 use std::path::Path;
+use std::cmp::Reverse;
+use std::time::SystemTime;
 
 use walkdir::WalkDir;
+
+use crate::{ListParams, SortField};
 
 #[derive(Debug, Clone)]
 pub struct MediaFile {
     pub name: String,
     pub path: String, // relative path
     pub size: u64,
+    pub modified: Option<SystemTime>,
+    pub created: Option<SystemTime>,
     pub extension: String,
 }
 
-pub fn list_media_files(media_path: &Path) -> Vec<MediaFile> {
+pub fn list_media_files(media_path: &Path, params: &ListParams) -> Vec<MediaFile> {
     let mut files = Vec::new();
 
     let valid_extensions = ["mp4", "webm", "mkv", "avi", "mov"];
@@ -56,13 +62,21 @@ pub fn list_media_files(media_path: &Path) -> Vec<MediaFile> {
             name,
             path: format!("/media/{}", relative_path),
             size: metadata.len(),
+            modified: metadata.modified().ok(),
+            created: metadata.created().ok(),
             extension,
         })
     }
 
-    files.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-
-    files
+    match params.sort {
+        SortField::Name => files.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
+        SortField::Size => files.sort_by_key(|f| f.size),
+        SortField::Created => files.sort_by(|a, b| a.created.cmp(&b.created)),
+        SortField::LastModified => files.sort_by_key(|f| Reverse(f.modified)),
+    };
+    let start = (params.page.saturating_sub(1) as usize).saturating_mul(params.page_size as usize);
+    let end = (start + params.page_size as usize).min(files.len());
+    files[start..end].to_vec()
 }
 
 pub fn format_size(bytes: &u64) -> String {

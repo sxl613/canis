@@ -1,10 +1,41 @@
 mod media;
 mod templates;
 use askama::Template;
-use axum::{Router, extract::State, http::StatusCode, response::Html, routing::get};
+use axum::{Router, http::StatusCode, response::Html, routing::get};
+use axum::extract::{Query, State};
 use templates::IndexTemplate;
 use std::{net::SocketAddr, path::PathBuf};
 use tower_http::services::ServeDir;
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct ListParams {
+    #[serde(default = "default_page")]
+    page: u32,
+
+    #[serde(default = "default_page_size")]
+    page_size: u32,
+
+    #[serde(default)]
+    sort: SortField,
+}
+fn default_page() -> u32 { 1 }
+fn default_page_size() -> u32 { 50 }
+
+#[derive(Deserialize, Copy, Clone)]
+#[serde(rename_all = "lowercase")]
+enum SortField {
+    Name,
+    Size,
+    LastModified,
+    Created,
+}
+
+impl Default for SortField {
+    fn default() -> SortField {
+        SortField::LastModified
+    }
+}
 
 #[derive(Clone)]
 struct AppState {
@@ -47,9 +78,10 @@ async fn main() {
 
 async fn index_handler(
     State(state): State<AppState>,
+    Query(query): Query<ListParams>,
 ) -> Result<Html<String>, (StatusCode, String)> {
-    let files = media::list_media_files(&state.media_path);
-    IndexTemplate { files }
+    let files = media::list_media_files(&state.media_path, &query);
+    IndexTemplate { files, query }
         .render()
         .map(Html)
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
