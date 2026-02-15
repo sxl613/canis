@@ -3,9 +3,51 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mvwr</title>
+    <title>{{ video.name }}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "SF Mono", "Cascadia Mono", "Consolas", monospace;
+            background: #111;
+            color: #aaa;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        a {
+            color: #555;
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+        a:hover { color: #aaa; }
+        .title {
+            color: #ccc;
+            font-size: 0.85rem;
+            font-weight: normal;
+            margin: 1rem 0;
+        }
+        video {
+            width: 100%;
+            max-height: 75vh;
+            background: #0a0a0a;
+            display: block;
+            border: 1px solid #222;
+        }
+        .meta {
+            margin-top: 0.75rem;
+            font-size: 0.7rem;
+            color: #555;
+        }
+    </style>
   </head>
   <body>
-    <video preload="metadata" controls src="{{ video.path }}" type="video/{{ video.extension }}">
+    <div class="container">
+        <a href="/">&larr; back</a>
+        <h1 class="title">{{ video.name }}</h1>
+        <video preload="metadata" controls>
+            <source src="{{ video.path }}" type="video/{{ video.extension }}">
+        </video>
+        <div class="meta">{{ crate::media::format_size(video.size) }}</div>
+    </div>
   </body>
 </html>
