@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Media Viewer</title>
+    <title>mwvr</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -94,7 +94,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Media Viewer</h1>
+        <h1>mwvr</h1>
 
       <form method="GET" action="/" class="controls">
         <label
@@ -160,6 +160,7 @@
         {% else %}
             <div class="media-grid">
                 {% for file in files %}
+            <a href="/v/{{ file.name }}">
                 <div class="media-card">
                     <video preload="none" controls data-src="{{ file.path }}" data-type="video/{{ file.extension }}">
                     </video>
@@ -171,6 +172,7 @@
                         </div>
                     </div>
                 </div>
+            </a>
                 {% endfor %}
 
             </div>

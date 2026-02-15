@@ -1,11 +1,11 @@
 mod media;
 mod templates;
 use askama::Template;
-use axum::extract::{Query, State};
+use axum::extract::{Path as AxumPath, Query, State};
 use axum::{Router, http::StatusCode, response::Html, routing::get};
 use serde::Deserialize;
 use std::{net::SocketAddr, path::PathBuf};
-use templates::IndexTemplate;
+use templates::{IndexTemplate, WatchTemplate};
 use tower_http::services::ServeDir;
 
 #[derive(Deserialize)]
@@ -77,6 +77,7 @@ async fn main() {
     // Build our application with routes
     let app = Router::new()
         .route("/", get(index_handler))
+        .route("/v/{filename}", get(watch_handler))
         // Serve static files from media directory
         .nest_service("/media", ServeDir::new(media_path))
         .with_state(state);
@@ -98,6 +99,20 @@ async fn index_handler(
 ) -> Result<Html<String>, (StatusCode, String)> {
     let files = media::list_media_files(&state.media_path, &query);
     IndexTemplate { files, query }
+        .render()
+        .map(Html)
+        .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
+}
+
+async fn watch_handler(
+    AxumPath(filename): AxumPath<String>,
+    State(state): State<AppState>,
+) -> Result<Html<String>, (StatusCode, String)> {
+    let video = match media::find_media_file(&state.media_path, &filename) {
+        Some(f) => f,
+        None => return Err((StatusCode::NOT_FOUND, "File not found".to_string())),
+    };
+    WatchTemplate { video }
         .render()
         .map(Html)
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))

@@ -1,5 +1,6 @@
+use std::{cmp::Reverse, path::PathBuf};
+use std::fs;
 use std::path::Path;
-use std::cmp::Reverse;
 use std::time::SystemTime;
 
 use walkdir::WalkDir;
@@ -78,6 +79,66 @@ pub fn list_media_files(media_path: &Path, params: &ListParams) -> Vec<MediaFile
     let end = (start + params.page_size as usize).min(files.len());
     files[start..end].to_vec()
 }
+pub fn find_media_file(media_path: &Path, filename: &String) -> Option<MediaFile> {
+    let valid_extensions = ["mp4", "webm", "mkv", "avi", "mov"];
+
+    // Canonicalize the base dir once
+    let base = media_path.canonicalize().ok()?;
+
+    // Optional “fast fail”: reject obvious path separators in the *input* name.
+    // Canonicalize + starts_with is the real protection, but this improves ergonomics.
+    if filename.contains('/') || filename.contains('\\') {
+        return None;
+    }
+
+    let full_path: PathBuf = base.join(&filename);
+
+    // canonicalize resolves ../ and follows symlinks; if file doesn't exist, this fails.
+    let canonical = full_path.canonicalize().ok()?;
+
+    // Prevent path escape (incl. via symlinks)
+    if !canonical.starts_with(&base) {
+        return None;
+    }
+
+    // Must be a file
+    let metadata = fs::metadata(&canonical).ok()?;
+    if !metadata.is_file() {
+        return None;
+    }
+
+    // Extension allow-list (case-insensitive)
+    let extension = canonical
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|s| s.to_ascii_lowercase())?;
+    if !valid_extensions.contains(&extension.as_str()) {
+        return None;
+    }
+
+    // Relative path for URL building: canonical is inside base (checked above)
+    let relative_path = canonical.strip_prefix(&base).ok()?;
+
+    // Convert to a URL-ish path segment (handle Windows '\')
+    let relative_url = relative_path.to_string_lossy().replace('\\', "/");
+
+
+        let name = canonical
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("Unknown")
+            .to_string();
+
+    Some(MediaFile {
+        name,
+        path: format!("/media/{}", relative_url),
+        size: metadata.len(),
+        modified: metadata.modified().ok(),
+        created: metadata.created().ok(),
+        extension,
+    })
+}
+
 
 pub fn format_size(bytes: &u64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB"];
