@@ -59,6 +59,65 @@
     <div class="container">
         <h1>Media Viewer</h1>
 
+      <form method="GET" action="/">
+        <label
+          >Page:
+          <input type="number" name="page" value="{{ query.page }}" min="1" />
+        </label>
+
+        <label
+          >Per page:
+          <input
+            type="number"
+            name="page_size"
+            value="{{ query.page_size }}"
+            min="1"
+            max="100"
+          />
+        </label>
+
+        <label
+          >Sort by:
+          <select name="sort">
+            <option
+              value="name"
+              {%
+              if
+              query.sort.is_name()
+              %}selected{%
+              endif
+              %}
+            >
+              Name
+            </option>
+            <option
+              value="size"
+              {%
+              if
+              query.sort.is_size()
+              %}selected{%
+              endif
+              %}
+            >
+              Size
+            </option>
+            <option
+              value="lastmodified"
+              {%
+              if
+              query.sort.is_last_modified()
+              %}selected{%
+              endif
+              %}
+            >
+              Last Modified
+            </option>
+          </select>
+        </label>
+
+        <button type="submit">Apply</button>
+      </form>
+
         {% if files.is_empty() %}
             <p>No media files found.</p>
         {% else %}
@@ -78,6 +137,7 @@
                     </div>
                 </div>
                 {% endfor %}
+
             </div>
         {% endif %}
     </div>

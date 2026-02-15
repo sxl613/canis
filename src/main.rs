@@ -1,12 +1,12 @@
 mod media;
 mod templates;
 use askama::Template;
-use axum::{Router, http::StatusCode, response::Html, routing::get};
 use axum::extract::{Query, State};
-use templates::IndexTemplate;
-use std::{net::SocketAddr, path::PathBuf};
-use tower_http::services::ServeDir;
+use axum::{Router, http::StatusCode, response::Html, routing::get};
 use serde::Deserialize;
+use std::{net::SocketAddr, path::PathBuf};
+use templates::IndexTemplate;
+use tower_http::services::ServeDir;
 
 #[derive(Deserialize)]
 struct ListParams {
@@ -19,8 +19,12 @@ struct ListParams {
     #[serde(default)]
     sort: SortField,
 }
-fn default_page() -> u32 { 1 }
-fn default_page_size() -> u32 { 50 }
+fn default_page() -> u32 {
+    1
+}
+fn default_page_size() -> u32 {
+    50
+}
 
 #[derive(Deserialize, Copy, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -29,6 +33,18 @@ enum SortField {
     Size,
     LastModified,
     Created,
+}
+
+impl SortField {
+    pub fn is_name(&self) -> bool {
+        matches!(self, SortField::Name)
+    }
+    pub fn is_size(&self) -> bool {
+        matches!(self, SortField::Size)
+    }
+    pub fn is_last_modified(&self) -> bool {
+        matches!(self, SortField::LastModified)
+    }
 }
 
 impl Default for SortField {
