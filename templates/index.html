@@ -161,9 +161,7 @@
             <div class="media-grid">
                 {% for file in files %}
                 <div class="media-card">
-                    <video preload="metadata" controls>
-                        <source src="{{ file.path }}" type="video/{{ file.extension }}">
-                        Your browser doesn't support video playback.
+                    <video preload="none" controls data-src="{{ file.path }}" data-type="video/{{ file.extension }}">
                     </video>
                     <div class="media-info">
                         <div class="media-name">{{ file.name }}</div>
@@ -178,5 +176,19 @@
             </div>
         {% endif %}
     </div>
+    <script>
+        document.querySelectorAll('video[data-src]').forEach(v => {
+            v.addEventListener('play', () => {
+                if (!v.querySelector('source')) {
+                    const src = document.createElement('source');
+                    src.src = v.dataset.src;
+                    src.type = v.dataset.type;
+                    v.appendChild(src);
+                    v.load();
+                    v.play();
+                }
+            }, { once: true });
+        });
+    </script>
 </body>
 </html>
