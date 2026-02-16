@@ -21,6 +21,7 @@ struct ListParams {
     #[serde(default)]
     sort: SortField,
 }
+
 fn default_page() -> u32 {
     1
 }

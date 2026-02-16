@@ -82,12 +82,6 @@
             border: 1px solid #222;
         }
 
-        .media-grid a {
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-
         .media-card {
             background: #111;
             overflow: hidden;
@@ -111,6 +105,22 @@
             color: #555;
             margin-top: 0.25rem;
         }
+        .watch-link {
+            display: inline-block;
+            margin-top: 0.6rem;
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #333;
+            text-decoration: none;
+            color: #777;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .watch-link:hover {
+            color: #bbb;
+            border-color: #555;
+        }
+        .watch-link:active { transform: translateY(1px); }
         .extension-badge {
             display: inline-block;
             padding: 1px 5px;
@@ -123,6 +133,22 @@
         }
 
         p { color: #555; font-size: 0.85rem; }
+
+        @media (max-width: 700px) {
+            body { padding: 1rem; }
+            .controls {
+                flex-wrap: wrap;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            .controls button { margin-left: 0; }
+            .media-grid {
+                grid-template-columns: 1fr;
+            }
+            .media-card video {
+                height: 220px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -193,7 +219,6 @@
         {% else %}
             <div class="media-grid">
                 {% for file in files %}
-            <a href="/v/{{ file.name }}">
                 <div class="media-card">
                     <video preload="none" controls data-src="{{ file.path }}" data-type="video/{{ file.extension }}">
                     </video>
@@ -203,9 +228,9 @@
                             <span class="extension-badge">{{ file.extension }}</span>
                             {{ crate::media::format_size(file.size) }}
                         </div>
+                        <a class="watch-link" href="/v/{{ file.name }}">Watch</a>
                     </div>
                 </div>
-            </a>
                 {% endfor %}
 
             </div>

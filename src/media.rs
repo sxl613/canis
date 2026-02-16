@@ -1,7 +1,7 @@
-use std::{cmp::Reverse, path::PathBuf};
 use std::fs;
 use std::path::Path;
 use std::time::SystemTime;
+use std::{cmp::Reverse, path::PathBuf};
 
 use walkdir::WalkDir;
 
@@ -75,8 +75,11 @@ pub fn list_media_files(media_path: &Path, params: &ListParams) -> Vec<MediaFile
         SortField::Created => files.sort_by(|a, b| a.created.cmp(&b.created)),
         SortField::LastModified => files.sort_by_key(|f| Reverse(f.modified)),
     };
-    let start = (params.page.saturating_sub(1) as usize).saturating_mul(params.page_size as usize);
-    let end = (start + params.page_size as usize).min(files.len());
+    let page_size = (params.page_size as usize).max(1);
+    let total_pages = (files.len() + page_size - 1) / page_size.max(1);
+    let page = (params.page as usize).clamp(1, total_pages.max(1));
+    let start = (page - 1) * page_size;
+    let end = (start + page_size).min(files.len());
     files[start..end].to_vec()
 }
 pub fn find_media_file(media_path: &Path, filename: &String) -> Option<MediaFile> {
@@ -122,12 +125,11 @@ pub fn find_media_file(media_path: &Path, filename: &String) -> Option<MediaFile
     // Convert to a URL-ish path segment (handle Windows '\')
     let relative_url = relative_path.to_string_lossy().replace('\\', "/");
 
-
-        let name = canonical
-            .file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or("Unknown")
-            .to_string();
+    let name = canonical
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("Unknown")
+        .to_string();
 
     Some(MediaFile {
         name,
@@ -138,7 +140,6 @@ pub fn find_media_file(media_path: &Path, filename: &String) -> Option<MediaFile
         extension,
     })
 }
-
 
 pub fn format_size(bytes: &u64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB"];
