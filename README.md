@@ -1,11 +1,13 @@
 # canis
 
-A single binary, ultra simple media server. Use the browser for playing the videos.
+A single-binary, simple media server.
+Use the browser for actually displaying the videos so we only have to worry about serving the data.
 
-The idea is to run this bound to some closed off interface (e.g. Tailscale) so one doesn't have to worry about authentication (apart from some simple Cookie based checks).
+The idea is to run this bound to some closed off interface (e.g. Tailscale) so one doesn't have to worry about authentication. There is a very simple Cookie authorization check implemented for good measure.
 
-## authentication
+## Auth
 Set `AUTH_COOKIE_NAME` and `AUTH_COOKIE_VALUE`. Both need setting or the auth check doesn't run.
+If both are set the app is going to return a 401 unless queried with the cookie.
 
 ## Example
 
