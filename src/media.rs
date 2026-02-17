@@ -21,6 +21,11 @@ pub fn list_media_files(media_path: &Path, params: &ListParams) -> Vec<MediaFile
     let mut files = Vec::new();
 
     let valid_extensions = ["mp4", "webm", "mkv", "avi", "mov"];
+    let query = if params.query.is_empty() {
+        None
+    } else {
+        Some(params.query.to_lowercase())
+    };
 
     for entry in WalkDir::new(media_path)
         .follow_links(true)
@@ -58,6 +63,10 @@ pub fn list_media_files(media_path: &Path, params: &ListParams) -> Vec<MediaFile
             .and_then(|s| s.to_str())
             .unwrap_or("Unknown")
             .to_string();
+
+        if query.as_deref().is_some_and(|q| !name.to_lowercase().contains(&q)) {
+            continue;
+        }
 
         files.push(MediaFile {
             name,

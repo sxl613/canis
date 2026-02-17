@@ -20,6 +20,9 @@ struct ListParams {
 
     #[serde(default)]
     sort: SortField,
+
+    #[serde(default)]
+    query: String,
 }
 
 fn default_page() -> u32 {
