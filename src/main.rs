@@ -21,6 +21,9 @@ struct ListParams {
     #[serde(default)]
     sort: SortField,
 
+    #[serde(default = "default_sort_dir")]
+    dir: SortDirection,
+
     #[serde(default)]
     query: String,
 }
@@ -31,6 +34,10 @@ fn default_page() -> u32 {
 fn default_page_size() -> u32 {
     50
 }
+fn default_sort_dir() -> SortDirection {
+    SortDirection::Asc
+}
+
 
 #[derive(Deserialize, Copy, Clone)]
 #[serde(rename_all = "lowercase")]
@@ -39,6 +46,25 @@ enum SortField {
     Size,
     LastModified,
     Created,
+}
+
+#[derive(Deserialize, Copy, Clone)]
+#[serde(rename_all = "lowercase")]
+enum SortDirection {
+    Asc,
+    Desc
+}
+
+impl SortDirection {
+    pub fn is_asc(&self) -> bool {
+        matches!(self, SortDirection::Asc)
+    }
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            SortDirection::Asc => "asc",
+            SortDirection::Desc => "desc",
+        }
+    }
 }
 
 impl SortField {

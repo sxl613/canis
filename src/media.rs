@@ -5,7 +5,7 @@ use std::{cmp::Reverse, path::PathBuf};
 
 use walkdir::WalkDir;
 
-use crate::{ListParams, SortField};
+use crate::{ListParams, SortDirection, SortField};
 
 #[derive(Debug, Clone)]
 pub struct MediaFile {
@@ -85,13 +85,15 @@ pub fn list_media_files(media_path: &Path, params: &ListParams) -> PaginatedMedi
             extension,
         })
     }
-
     match params.sort {
         SortField::Name => files.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
         SortField::Size => files.sort_by_key(|f| f.size),
         SortField::Created => files.sort_by(|a, b| a.created.cmp(&b.created)),
         SortField::LastModified => files.sort_by_key(|f| Reverse(f.modified)),
     };
+    if matches!(params.dir, SortDirection::Desc) {
+        files.reverse();
+    }
     let page_size = (params.page_size as usize).max(1);
     let total_pages = (files.len() + page_size - 1) / page_size.max(1);
     let page = (params.page as usize).clamp(1, total_pages.max(1));

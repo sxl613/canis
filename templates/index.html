@@ -282,19 +282,26 @@
           </select>
         </label>
 
+        <label>Dir:
+          <select name="dir">
+            <option value="asc" {% if query.dir.is_asc() %}selected{% endif %}>asc</option>
+            <option value="desc" {% if !query.dir.is_asc() %}selected{% endif %}>desc</option>
+          </select>
+        </label>
+
         <button type="submit">Apply</button>
       </form>
 
         {% if paginated.total_pages > 1 %}
         <div class="pagination">
             {% if paginated.page > 1 %}
-                <a href="/?page={{ paginated.page - 1 }}&page_size={{ query.page_size }}&sort={{ query.sort.as_str() }}&query={{ query.query }}">← prev</a>
+                <a href="/?page={{ paginated.page - 1 }}&page_size={{ query.page_size }}&sort={{ query.sort.as_str() }}&dir={{ query.dir.as_str() }}&query={{ query.query }}">← prev</a>
             {% else %}
                 <span class="pagination-disabled">← prev</span>
             {% endif %}
             <span>{{ paginated.page }} / {{ paginated.total_pages }}</span>
             {% if paginated.page < paginated.total_pages %}
-                <a href="/?page={{ paginated.page + 1 }}&page_size={{ query.page_size }}&sort={{ query.sort.as_str() }}&query={{ query.query }}">next →</a>
+                <a href="/?page={{ paginated.page + 1 }}&page_size={{ query.page_size }}&sort={{ query.sort.as_str() }}&dir={{ query.dir.as_str() }}&query={{ query.query }}">next →</a>
             {% else %}
                 <span class="pagination-disabled">next →</span>
             {% endif %}
