@@ -6,7 +6,8 @@ use axum::middleware;
 use axum::response::IntoResponse;
 use axum::{Router, http::StatusCode, response::Html, routing::get};
 use serde::Deserialize;
-use std::{net::SocketAddr, path::PathBuf};
+use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+use tokio::sync::RwLock;
 use templates::{IndexTemplate, WatchTemplate};
 use tower_http::services::ServeDir;
 
@@ -96,6 +97,7 @@ impl Default for SortField {
 #[derive(Clone)]
 struct AppState {
     media_path: PathBuf,
+    cache: Arc<RwLock<Vec<media::MediaFile>>>,
     auth_cookie_name: Option<String>,
     auth_cookie_value: Option<String>,
 }
@@ -113,9 +115,25 @@ async fn main() {
     let auth_cookie_value = std::env::var("AUTH_COOKIE_VALUE").ok();
     let auth_cookie_name = std::env::var("AUTH_COOKIE_NAME").ok();
 
+    // Build initial file index
+    let index = media::build_index(&PathBuf::from(&media_path));
+    let cache = Arc::new(RwLock::new(index));
+
+    let path_cl = PathBuf::from(&media_path);
+    let cache_cl = Arc::clone(&cache);
+    tokio::spawn( async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(60));
+        loop {
+            interval.tick().await;
+            let fresh = media::build_index(&path_cl);
+            *cache_cl.write().await = fresh;
+        }
+    } );
+
     // Create application state
     let state = AppState {
         media_path: PathBuf::from(&media_path),
+        cache: cache.clone(),
         auth_cookie_value: auth_cookie_value,
         auth_cookie_name: auth_cookie_name,
     };
@@ -147,7 +165,8 @@ async fn index_handler(
     State(state): State<AppState>,
     Query(query): Query<ListParams>,
 ) -> Result<Html<String>, (StatusCode, String)> {
-    let paginated = media::list_media_files(&state.media_path, &query);
+    let files = state.cache.read().await;
+    let paginated = media::list_media_files(&files, &query);
     IndexTemplate { paginated, query }
         .render()
         .map(Html)

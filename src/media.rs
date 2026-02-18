@@ -25,15 +25,9 @@ pub struct PaginatedMedia {
     pub files: Vec<MediaFile>
 }
 
-pub fn list_media_files(media_path: &Path, params: &ListParams) -> PaginatedMedia {
+pub fn build_index(media_path: &Path) -> Vec<MediaFile> {
     let mut files = Vec::new();
-
     let valid_extensions = ["mp4", "webm", "mkv", "avi", "mov"];
-    let query = if params.query.is_empty() {
-        None
-    } else {
-        Some(params.query.to_lowercase())
-    };
 
     for entry in WalkDir::new(media_path)
         .follow_links(true)
@@ -60,6 +54,7 @@ pub fn list_media_files(media_path: &Path, params: &ListParams) -> PaginatedMedi
             Ok(m) => m,
             Err(_) => continue,
         };
+
         let relative_path = path
             .strip_prefix(media_path)
             .unwrap_or(path)
@@ -72,10 +67,6 @@ pub fn list_media_files(media_path: &Path, params: &ListParams) -> PaginatedMedi
             .unwrap_or("Unknown")
             .to_string();
 
-        if query.as_deref().is_some_and(|q| !name.to_lowercase().contains(&q)) {
-            continue;
-        }
-
         files.push(MediaFile {
             name,
             path: format!("/media/{}", relative_path),
@@ -83,8 +74,26 @@ pub fn list_media_files(media_path: &Path, params: &ListParams) -> PaginatedMedi
             modified: metadata.modified().ok(),
             created: metadata.created().ok(),
             extension,
-        })
+        });
     }
+    files
+}
+
+pub fn list_media_files(all_files: &[MediaFile], params: &ListParams) -> PaginatedMedia {
+    let query = if params.query.is_empty() {
+        None
+    } else {
+        Some(params.query.to_lowercase())
+    };
+
+    let mut files: Vec<MediaFile> = all_files
+        .iter()
+        .filter(|f| {
+            query.as_deref().map_or(true, |q| f.name.to_lowercase().contains(q))
+        })
+        .cloned()
+        .collect();
+
     match params.sort {
         SortField::Name => files.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
         SortField::Size => files.sort_by_key(|f| f.size),
