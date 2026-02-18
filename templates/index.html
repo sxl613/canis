@@ -331,6 +331,21 @@
         {% endif %}
     </div>
     <script>
+        const PREFS = ['sort', 'dir', 'page_size'];
+        const params = new URLSearchParams(window.location.search);
+        const form = document.querySelector('form.controls');
+
+        PREFS.forEach(key => {
+            if (!params.has(key)) {
+                const stored = localStorage.getItem(`mwvr_${key}`);
+                if (stored) form.elements[key].value = stored;
+            }
+        });
+
+        form.addEventListener('submit', () => {
+            PREFS.forEach(key => localStorage.setItem(`mwvr_${key}`, form.elements[key].value));
+        });
+
         document.addEventListener('keydown', (e) => {
             if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
                 e.preventDefault();
