@@ -178,6 +178,30 @@
 
         p { color: var(--color-muted); font-size: 0.85rem; }
 
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            font-size: 0.8rem;
+            color: var(--color-muted);
+        }
+        .pagination a {
+            color: var(--color-link);
+            text-decoration: none;
+            border: 1px solid var(--border-input);
+            padding: 0.25rem 0.75rem;
+        }
+        .pagination a:hover {
+            color: var(--color-link-h);
+            border-color: var(--border-hover);
+        }
+        .pagination-disabled {
+            color: var(--border-input);
+            border: 1px solid var(--border);
+            padding: 0.25rem 0.75rem;
+        }
+
         @media (max-width: 700px) {
             body { padding: 1rem; }
             .controls {
@@ -200,11 +224,9 @@
         <h1><a href="/">mwvr</a></h1>
 
       <form method="GET" action="/" class="controls">
-        <label
-          >Page:
-          <input type="number" name="page" value="{{ query.page }}" min="1" />
-        </label>
-
+          <div>
+              Total: {{ paginated.total }}
+              </div>
         <label>
             Search:
             <input type="text" name="query" value="{{ query.query }}" />
@@ -263,11 +285,27 @@
         <button type="submit">Apply</button>
       </form>
 
-        {% if files.is_empty() %}
+        {% if paginated.total_pages > 1 %}
+        <div class="pagination">
+            {% if paginated.page > 1 %}
+                <a href="/?page={{ paginated.page - 1 }}&page_size={{ query.page_size }}&sort={{ query.sort.as_str() }}&query={{ query.query }}">← prev</a>
+            {% else %}
+                <span class="pagination-disabled">← prev</span>
+            {% endif %}
+            <span>{{ paginated.page }} / {{ paginated.total_pages }}</span>
+            {% if paginated.page < paginated.total_pages %}
+                <a href="/?page={{ paginated.page + 1 }}&page_size={{ query.page_size }}&sort={{ query.sort.as_str() }}&query={{ query.query }}">next →</a>
+            {% else %}
+                <span class="pagination-disabled">next →</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if paginated.files.is_empty() %}
             <p>No media files found.</p>
         {% else %}
             <div class="media-grid">
-                {% for file in files %}
+                {% for file in paginated.files %}
                 <div class="media-card">
                     <video preload="none" controls data-src="{{ file.path }}" data-type="video/{{ file.extension }}">
                     </video>

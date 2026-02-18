@@ -1,11 +1,12 @@
 use crate::ListParams;
 use crate::media::MediaFile;
+use crate::media::PaginatedMedia;
 use askama::Template;
 
 #[derive(Template)]
 #[template(path = "index.html")]
 pub struct IndexTemplate {
-    pub files: Vec<MediaFile>,
+    pub paginated: PaginatedMedia,
     pub query: ListParams,
 }
 

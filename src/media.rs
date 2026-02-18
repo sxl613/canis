@@ -17,7 +17,15 @@ pub struct MediaFile {
     pub extension: String,
 }
 
-pub fn list_media_files(media_path: &Path, params: &ListParams) -> Vec<MediaFile> {
+#[derive(Debug, Clone)]
+pub struct PaginatedMedia {
+    pub total: usize,
+    pub total_pages: usize,
+    pub page: usize,
+    pub files: Vec<MediaFile>
+}
+
+pub fn list_media_files(media_path: &Path, params: &ListParams) -> PaginatedMedia {
     let mut files = Vec::new();
 
     let valid_extensions = ["mp4", "webm", "mkv", "avi", "mov"];
@@ -89,7 +97,12 @@ pub fn list_media_files(media_path: &Path, params: &ListParams) -> Vec<MediaFile
     let page = (params.page as usize).clamp(1, total_pages.max(1));
     let start = (page - 1) * page_size;
     let end = (start + page_size).min(files.len());
-    files[start..end].to_vec()
+    PaginatedMedia {
+        total: files.len(),
+        total_pages: total_pages,
+        page: page,
+        files: files[start..end].to_vec()
+    }
 }
 pub fn find_media_file(media_path: &Path, filename: &String) -> Option<MediaFile> {
     let valid_extensions = ["mp4", "webm", "mkv", "avi", "mov"];

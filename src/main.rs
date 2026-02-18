@@ -51,6 +51,14 @@ impl SortField {
     pub fn is_last_modified(&self) -> bool {
         matches!(self, SortField::LastModified)
     }
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            SortField::Name => "name",
+            SortField::Size => "size",
+            SortField::LastModified => "lastmodified",
+            SortField::Created => "created",
+        }
+    }
 }
 
 impl Default for SortField {
@@ -113,8 +121,8 @@ async fn index_handler(
     State(state): State<AppState>,
     Query(query): Query<ListParams>,
 ) -> Result<Html<String>, (StatusCode, String)> {
-    let files = media::list_media_files(&state.media_path, &query);
-    IndexTemplate { files, query }
+    let paginated = media::list_media_files(&state.media_path, &query);
+    IndexTemplate { paginated, query }
         .render()
         .map(Html)
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
