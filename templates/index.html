@@ -331,6 +331,16 @@
         {% endif %}
     </div>
     <script>
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+                e.preventDefault();
+                document.querySelector('input[name="query"]').focus();
+            }
+            if (e.key === 'Escape') {
+                document.activeElement.blur();
+            }
+        });
+
         document.querySelectorAll('video[data-src]').forEach(v => {
             v.addEventListener('play', () => {
                 if (!v.querySelector('source')) {
