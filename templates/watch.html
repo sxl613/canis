@@ -46,6 +46,46 @@
             font-size: 0.7rem;
             color: #555;
         }
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            gap: 1px;
+        }
+        .nav a, .nav span {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid #222;
+            font-size: 0.75rem;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        .nav a {
+            color: #555;
+            text-decoration: none;
+            gap: 0.5rem;
+        }
+        .nav a:hover {
+            color: #aaa;
+            border-color: #444;
+            background: #161616;
+        }
+        .nav a:active { transform: translateY(1px); }
+        .nav span { color: #2a2a2a; border-color: #1a1a1a; }
+        .nav-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 35vw;
+        }
+        .nav-next { margin-left: auto; }
+        @media (max-width: 600px) {
+            body { padding: 0; }
+            .container { padding: 1rem; }
+            .nav a, .nav span { padding: 1rem; }
+            .nav-name { max-width: 28vw; }
+        }
     </style>
   </head>
   <body>
@@ -56,6 +96,22 @@
             <source src="{{ video.path }}" type="video/{{ video.extension }}">
         </video>
         <div class="meta">{{ crate::media::format_size(video.size) }}</div>
+        <div class="nav">
+            {% if let Some(name) = prev %}
+                <a href="/v/{{ name }}?sort={{ sort.as_str() }}&dir={{ dir.as_str() }}" class="nav-prev">
+                    &larr; <span class="nav-name">{{ name }}</span>
+                </a>
+            {% else %}
+                <span class="nav-prev">&larr;</span>
+            {% endif %}
+            {% if let Some(name) = next %}
+                <a href="/v/{{ name }}?sort={{ sort.as_str() }}&dir={{ dir.as_str() }}" class="nav-next">
+                    <span class="nav-name">{{ name }}</span> &rarr;
+                </a>
+            {% else %}
+                <span class="nav-next">&rarr;</span>
+            {% endif %}
+        </div>
     </div>
     <script>
       const backLink = document.getElementById('back-link');
@@ -65,6 +121,28 @@
           window.history.back();
         });
       }
+
+      const video = document.querySelector('video');
+      document.addEventListener('keydown', e => {
+        if (document.activeElement.tagName === 'INPUT') return;
+        if (e.key === ' ' || e.key === 'k') {
+          e.preventDefault();
+          video.paused ? video.play() : video.pause();
+        }
+        if (e.key === 'j') video.currentTime -= 10;
+        if (e.key === 'l') video.currentTime += 10;
+        if (e.key === 'f') {
+          document.fullscreenElement ? document.exitFullscreen() : video.requestFullscreen();
+        }
+        if (e.key === 'ArrowLeft') {
+          const prev = document.querySelector('a.nav-prev');
+          if (prev) prev.click();
+        }
+        if (e.key === 'ArrowRight') {
+          const next = document.querySelector('a.nav-next');
+          if (next) next.click();
+        }
+      });
     </script>
   </body>
 </html>

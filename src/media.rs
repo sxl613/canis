@@ -22,7 +22,7 @@ pub struct PaginatedMedia {
     pub total: usize,
     pub total_pages: usize,
     pub page: usize,
-    pub files: Vec<MediaFile>
+    pub files: Vec<MediaFile>,
 }
 
 pub fn build_index(media_path: &Path) -> Vec<MediaFile> {
@@ -89,7 +89,9 @@ pub fn list_media_files(all_files: &[MediaFile], params: &ListParams) -> Paginat
     let mut files: Vec<MediaFile> = all_files
         .iter()
         .filter(|f| {
-            query.as_deref().map_or(true, |q| f.name.to_lowercase().contains(q))
+            query
+                .as_deref()
+                .map_or(true, |q| f.name.to_lowercase().contains(q))
         })
         .cloned()
         .collect();
@@ -112,7 +114,7 @@ pub fn list_media_files(all_files: &[MediaFile], params: &ListParams) -> Paginat
         total: files.len(),
         total_pages: total_pages,
         page: page,
-        files: files[start..end].to_vec()
+        files: files[start..end].to_vec(),
     }
 }
 pub fn find_media_file(media_path: &Path, filename: &String) -> Option<MediaFile> {
@@ -172,6 +174,29 @@ pub fn find_media_file(media_path: &Path, filename: &String) -> Option<MediaFile
         created: metadata.created().ok(),
         extension,
     })
+}
+
+pub fn find_neighbors(all_files: &[MediaFile], current: &str, sort: SortField, dir: SortDirection) -> (Option<String>, Option<String>) {
+    // a linear scan, I know...
+    let mut files: Vec<&MediaFile> = all_files.iter().collect();
+    match sort {
+        SortField::Name => files.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
+        SortField::Size => files.sort_by_key(|f| f.size),
+        SortField::Created => files.sort_by(|a, b| a.created.cmp(&b.created)),
+        SortField::LastModified => files.sort_by_key(|f| Reverse(f.modified)),
+    }
+    if matches!(dir, SortDirection::Desc) {
+        files.reverse();
+    }
+    for (idx, file) in files.iter().enumerate() {
+        if file.name == current {
+            return (
+                idx.checked_sub(1).and_then(|pi| files.get(pi)).map(|f| f.name.clone()),
+                files.get(idx + 1).map(|f| f.name.clone()),
+            );
+        }
+    }
+    (None, None)
 }
 
 pub fn format_size(bytes: &u64) -> String {

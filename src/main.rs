@@ -173,15 +173,26 @@ async fn index_handler(
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
 }
 
+#[derive(Deserialize)]
+struct WatchParams {
+    #[serde(default)]
+    sort: SortField,
+    #[serde(default = "default_sort_dir")]
+    dir: SortDirection,
+}
+
 async fn watch_handler(
     AxumPath(filename): AxumPath<String>,
     State(state): State<AppState>,
+    Query(params): Query<WatchParams>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let video = match media::find_media_file(&state.media_path, &filename) {
         Some(f) => f,
         None => return Err((StatusCode::NOT_FOUND, "File not found".to_string())),
     };
-    WatchTemplate { video }
+    let files = state.cache.read().await;
+    let (prev, next) = media::find_neighbors(&files, &filename, params.sort, params.dir);
+    WatchTemplate { video, prev, next, sort: params.sort, dir: params.dir }
         .render()
         .map(Html)
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))

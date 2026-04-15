@@ -1,4 +1,4 @@
-use crate::ListParams;
+use crate::{ListParams, SortField, SortDirection};
 use crate::media::MediaFile;
 use crate::media::PaginatedMedia;
 use askama::Template;
@@ -14,4 +14,8 @@ pub struct IndexTemplate {
 #[template(path = "watch.html")]
 pub struct WatchTemplate {
     pub video: MediaFile,
+    pub prev: Option<String>,
+    pub next: Option<String>,
+    pub sort: SortField,
+    pub dir: SortDirection,
 }
