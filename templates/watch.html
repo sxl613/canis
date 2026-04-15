@@ -134,11 +134,11 @@
         if (e.key === 'f') {
           document.fullscreenElement ? document.exitFullscreen() : video.requestFullscreen();
         }
-        if (e.key === 'ArrowLeft') {
+        if (e.key === 'ArrowLeft' || e.key === '<') {
           const prev = document.querySelector('a.nav-prev');
           if (prev) prev.click();
         }
-        if (e.key === 'ArrowRight') {
+        if (e.key === 'ArrowRight' || e.key === '>') {
           const next = document.querySelector('a.nav-next');
           if (next) next.click();
         }
