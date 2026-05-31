@@ -96,7 +96,6 @@ impl Default for SortField {
 
 #[derive(Clone)]
 struct AppState {
-    media_path: PathBuf,
     cache: Arc<RwLock<Vec<media::MediaFile>>>,
     auth_cookie_name: Option<String>,
     auth_cookie_value: Option<String>,
@@ -132,7 +131,6 @@ async fn main() {
 
     // Create application state
     let state = AppState {
-        media_path: PathBuf::from(&media_path),
         cache: cache.clone(),
         auth_cookie_value: auth_cookie_value,
         auth_cookie_name: auth_cookie_name,
@@ -186,11 +184,11 @@ async fn watch_handler(
     State(state): State<AppState>,
     Query(params): Query<WatchParams>,
 ) -> Result<Html<String>, (StatusCode, String)> {
-    let video = match media::find_media_file(&state.media_path, &filename) {
-        Some(f) => f,
+    let files = state.cache.read().await;
+    let video = match files.iter().find(|f| f.name == filename) {
+        Some(f) => f.clone(),
         None => return Err((StatusCode::NOT_FOUND, "File not found".to_string())),
     };
-    let files = state.cache.read().await;
     let (prev, next) = media::find_neighbors(&files, &filename, params.sort, params.dir);
     WatchTemplate { video, prev, next, sort: params.sort, dir: params.dir }
         .render()
