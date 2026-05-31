@@ -314,7 +314,8 @@
             <div class="media-grid">
                 {% for file in paginated.files %}
                 <div class="media-card">
-                    <video preload="none" controls data-src="{{ file.path }}" data-type="video/{{ file.extension }}">
+                    <video preload="none" controls>
+                        <source src="{{ file.path }}" type="video/{{ file.extension }}">
                     </video>
                     <div class="media-info">
                         <div class="media-name">{{ file.name }}</div>
@@ -354,19 +355,6 @@
             if (e.key === 'Escape') {
                 document.activeElement.blur();
             }
-        });
-
-        document.querySelectorAll('video[data-src]').forEach(v => {
-            v.addEventListener('play', () => {
-                if (!v.querySelector('source')) {
-                    const src = document.createElement('source');
-                    src.src = v.dataset.src;
-                    src.type = v.dataset.type;
-                    v.appendChild(src);
-                    v.load();
-                    v.play();
-                }
-            }, { once: true });
         });
     </script>
 </body>

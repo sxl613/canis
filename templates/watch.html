@@ -92,7 +92,7 @@
     <div class="container">
         <a id="back-link" class="back-link" href="/">&larr; back</a>
         <h1 class="title">{{ video.name }}</h1>
-        <video preload="metadata" controls>
+        <video preload="none" controls playsinline>
             <source src="{{ video.path }}" type="video/{{ video.extension }}">
         </video>
         <div class="meta">{{ crate::media::format_size(video.size) }}</div>
@@ -123,6 +123,7 @@
       }
 
       const video = document.querySelector('video');
+
       document.addEventListener('keydown', e => {
         if (document.activeElement.tagName === 'INPUT') return;
         if (e.key === ' ' || e.key === 'k') {
